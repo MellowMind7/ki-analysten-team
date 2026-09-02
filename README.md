@@ -53,6 +53,34 @@ By using this software, you agree to use it solely for learning purposes.
 - [Feature Requests](#feature-requests)
 - [License](#license)
 
+---
+
+## Datenquelle: yfinance, ohne API-Schlüssel
+
+Dieser Fork holt Kurse, Abschlüsse, Kennzahlen und Nachrichten über **yfinance**
+statt über financialdatasets.ai. Damit brauchst du **keinen Datenschlüssel**, kein
+Konto und kein Kontingent, und **deutsche Titel funktionieren** (`SAP.DE`, `BMW.DE`).
+
+Gemessen an den 31 Bilanzfeldern, die die Agenten anfragen:
+
+| Titel | Felder gefüllt | Insider-Meldungen |
+|---|---|---|
+| `AAPL` | 30 von 31 | 77 |
+| `SAP.DE` | 31 von 31 | 0 |
+
+**Insider-Geschäfte gibt es nur für US-Titel.** Das sind SEC-Meldungen nach Form 4,
+für den deutschen Markt existiert diese Meldepflicht nicht. Der zuständige Agent
+liefert bei DAX-Werten deshalb kein Signal und sagt das auch.
+
+Wer doch financialdatasets nutzen will, setzt vorher:
+
+```bash
+export DATA_SOURCE=financialdatasets
+export FINANCIAL_DATASETS_API_KEY=dein_schluessel
+```
+
+Es bleibt also ein einziger Schlüssel nötig, der fürs Sprachmodell.
+
 ## How to Install
 
 Before you can run the AI Hedge Fund, you'll need to install it and set up your API keys. These steps are common to both the full-stack web application and command line interface.

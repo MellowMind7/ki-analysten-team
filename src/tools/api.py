@@ -364,3 +364,33 @@ def prices_to_df(prices: list[Price]) -> pd.DataFrame:
 def get_price_data(ticker: str, start_date: str, end_date: str, api_key: str = None) -> pd.DataFrame:
     prices = get_prices(ticker, start_date, end_date, api_key=api_key)
     return prices_to_df(prices)
+
+
+# ---------------------------------------------------------------------------
+# Datenquelle umschalten
+#
+# Standard ist yfinance: kein Schlüssel, kein Tageslimit, und Xetra-Titel wie
+# SAP.DE funktionieren. financialdatasets.ai bleibt erreichbar, wenn jemand
+# einen Schlüssel hat und ihn nutzen will:
+#
+#     DATA_SOURCE=financialdatasets
+#
+# Die Namen unten überschreiben die Funktionen darüber. Weil das beim Import
+# des Moduls passiert, bekommen alle Agenten automatisch die richtige Quelle.
+# ---------------------------------------------------------------------------
+
+_DATA_SOURCE = os.environ.get("DATA_SOURCE", "yfinance").strip().lower()
+
+if _DATA_SOURCE == "yfinance":
+    from src.tools import yfinance_source as _yf
+
+    get_prices = _yf.get_prices
+    get_financial_metrics = _yf.get_financial_metrics
+    search_line_items = _yf.search_line_items
+    get_insider_trades = _yf.get_insider_trades
+    get_company_news = _yf.get_company_news
+    get_market_cap = _yf.get_market_cap
+
+    logger.info("Datenquelle: yfinance (ohne API-Schlüssel)")
+else:
+    logger.info("Datenquelle: financialdatasets.ai")
