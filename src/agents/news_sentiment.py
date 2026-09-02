@@ -1,7 +1,7 @@
 
 
 from langchain_core.messages import HumanMessage
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 from src.data.models import CompanyNews
 import pandas as pd
 import numpy as np
@@ -16,10 +16,22 @@ from typing_extensions import Literal
 
 
 class Sentiment(BaseModel):
-    """Represents the sentiment of a news article."""
+    """Represents the sentiment of a news article.
+
+    Toleriert abweichende Feldnamen. Sprachmodelle halten sich nicht immer
+    exakt ans Schema: DeepSeek liefert etwa ``confidence_score`` statt
+    ``confidence``, und der Lauf brach daran ab. Statt das Modell zu wechseln
+    nehmen wir hier beide Schreibweisen an.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     sentiment: Literal["positive", "negative", "neutral"]
-    confidence: int = Field(description="Confidence 0-100")
+    confidence: int = Field(
+        default=50,
+        validation_alias=AliasChoices("confidence", "confidence_score", "score"),
+        description="Confidence 0-100",
+    )
 
 
 def news_sentiment_agent(state: AgentState, agent_id: str = "news_sentiment_agent"):

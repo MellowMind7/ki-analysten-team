@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from typing_extensions import Literal
-from pydantic import BaseModel
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 from src.graph.state import AgentState, show_agent_reasoning
 from langchain_core.prompts import ChatPromptTemplate
@@ -19,7 +19,9 @@ from src.utils.progress import progress
 
 
 class AswathDamodaranSignal(BaseModel):
-    signal: Literal["bullish", "bearish", "neutral"]
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    signal: Literal["bullish", "bearish", "neutral"] = Field(default="neutral", validation_alias=AliasChoices("signal", "recommendation", "rating"))
     confidence: float          # 0‒100
     reasoning: str
 

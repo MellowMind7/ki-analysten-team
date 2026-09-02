@@ -1,7 +1,7 @@
 from src.graph.state import AgentState, show_agent_reasoning
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 import json
 import math
 from datetime import datetime, timedelta
@@ -24,8 +24,13 @@ from src.utils.api_key import get_api_key_from_state
 
 
 class NassimTalebSignal(BaseModel):
-    signal: Literal["bullish", "bearish", "neutral"]
-    confidence: int = Field(description="Confidence 0-100")
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    signal: Literal["bullish", "bearish", "neutral"] = Field(
+        default="neutral",
+        validation_alias=AliasChoices("signal", "recommendation", "rating"),
+    )
+    confidence: int = Field(default=50, validation_alias=AliasChoices("confidence", "confidence_score", "score", "confidence_level", "conviction"), description="Confidence 0-100")
     reasoning: str = Field(description="Reasoning for the decision")
 
 

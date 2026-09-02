@@ -2,7 +2,7 @@ from src.graph.state import AgentState, show_agent_reasoning
 from src.tools.api import get_financial_metrics, get_market_cap, search_line_items, get_insider_trades, get_company_news
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage
-from pydantic import BaseModel
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 import json
 from typing_extensions import Literal
 from src.utils.progress import progress
@@ -10,8 +10,10 @@ from src.utils.llm import call_llm
 from src.utils.api_key import get_api_key_from_state
 
 class CharlieMungerSignal(BaseModel):
-    signal: Literal["bullish", "bearish", "neutral"]
-    confidence: int
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    signal: Literal["bullish", "bearish", "neutral"] = Field(default="neutral", validation_alias=AliasChoices("signal", "recommendation", "rating"))
+    confidence: int = Field(default=50, validation_alias=AliasChoices("confidence", "confidence_score", "score", "confidence_level", "conviction"))
     reasoning: str
 
 

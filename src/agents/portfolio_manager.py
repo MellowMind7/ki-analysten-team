@@ -4,16 +4,18 @@ from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 
 from src.graph.state import AgentState, show_agent_reasoning
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 from typing_extensions import Literal
 from src.utils.progress import progress
 from src.utils.llm import call_llm
 
 
 class PortfolioDecision(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
     action: Literal["buy", "sell", "short", "cover", "hold"]
     quantity: int = Field(description="Number of shares to trade")
-    confidence: int = Field(description="Confidence 0-100")
+    confidence: int = Field(default=50, validation_alias=AliasChoices("confidence", "confidence_score", "score", "confidence_level", "conviction"), description="Confidence 0-100")
     reasoning: str = Field(description="Reasoning for the decision")
 
 

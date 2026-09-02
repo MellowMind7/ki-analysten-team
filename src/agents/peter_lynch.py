@@ -7,7 +7,7 @@ from src.tools.api import (
 )
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage
-from pydantic import BaseModel
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 import json
 from typing_extensions import Literal
 from src.utils.progress import progress
@@ -19,8 +19,10 @@ class PeterLynchSignal(BaseModel):
     """
     Container for the Peter Lynch-style output signal.
     """
-    signal: Literal["bullish", "bearish", "neutral"]
-    confidence: float
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    signal: Literal["bullish", "bearish", "neutral"] = Field(default="neutral", validation_alias=AliasChoices("signal", "recommendation", "rating"))
+    confidence: float = Field(default=50, validation_alias=AliasChoices("confidence", "confidence_score", "score", "confidence_level", "conviction"))
     reasoning: str
 
 

@@ -7,7 +7,7 @@ from typing_extensions import Literal
 from src.graph.state import AgentState, show_agent_reasoning
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
-from pydantic import BaseModel
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 from src.tools.api import (
     get_company_news,
@@ -23,8 +23,10 @@ from src.utils.api_key import get_api_key_from_state
 
 class MichaelBurrySignal(BaseModel):
     """Schema returned by the LLM."""
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
-    signal: Literal["bullish", "bearish", "neutral"]
+
+    signal: Literal["bullish", "bearish", "neutral"] = Field(default="neutral", validation_alias=AliasChoices("signal", "recommendation", "rating"))
     confidence: float  # 0–100
     reasoning: str
 
