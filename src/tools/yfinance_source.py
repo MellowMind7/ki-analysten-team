@@ -239,7 +239,12 @@ _CASHFLOW = {
 
 # Bestandsgrößen. Sie werden nicht über vier Quartale summiert, sondern zum
 # Stichtag genommen. Alles andere wäre die vierfache Bilanzsumme.
-_BESTAND = set(_BALANCE) | {"earnings_per_share"}
+#
+# earnings_per_share gehört bewusst NICHT dazu: der Gewinn je Aktie ist eine
+# Flussgröße, das Jahres-EPS ist die Summe der vier Quartale. Wer es als
+# Bestand behandelt, vergleicht beim Wachstum ein Quartal mit dem Vorquartal
+# und bekommt Ausreißer, die es nicht gibt.
+_BESTAND = set(_BALANCE)
 
 
 def _quelle(feld: str) -> tuple[str, tuple[str, ...]] | None:
@@ -261,49 +266,59 @@ def _abschluesse(ticker: str, quartalsweise: bool) -> dict[str, pd.DataFrame]:
     }
 
 
-def _wert(feld: str, frames: dict, cols: dict, ttm: bool) -> float | None:
+def _wert(feld: str, frames: dict, cols: dict, ttm: bool,
+          jahr: dict | None = None, jahr_cols: dict | None = None) -> float | None:
     """Einen Rohwert holen, direkt oder gerechnet."""
     q = _quelle(feld)
     if q:
         art, namen = q
         df, spalten = frames[art], cols[art]
-        if not spalten:
-            return None
         if ttm and feld not in _BESTAND:
-            summe = _sum_last_quarters(df, spalten, *namen)
+            summe = _sum_last_quarters(df, spalten, *namen) if spalten else None
             if summe is not None:
                 return summe
+            # Vier Quartale sind nicht vollständig, meist weil yfinance für eine
+            # Position ein Quartal auslässt. Dann den Jahreswert nehmen, NICHT
+            # den einzelnen Quartalswert: der wäre rund ein Viertel davon und
+            # würde als Jahreszahl gelesen jedes Verhältnis vervierfachen.
+            if jahr is not None and jahr_cols is not None:
+                jdf, jsp = jahr[art], jahr_cols[art]
+                if jsp:
+                    return _pick(jdf, jsp[0], *namen)
+            return None
+        if not spalten:
+            return None
         return _pick(df, spalten[0], *namen)
 
     # Abgeleitete Größen
     if feld == "working_capital":
-        ca = _wert("current_assets", frames, cols, ttm)
-        cl = _wert("current_liabilities", frames, cols, ttm)
+        ca = _wert("current_assets", frames, cols, ttm, jahr, jahr_cols)
+        cl = _wert("current_liabilities", frames, cols, ttm, jahr, jahr_cols)
         return None if ca is None or cl is None else ca - cl
     if feld == "book_value_per_share":
-        eq = _wert("shareholders_equity", frames, cols, ttm)
-        sh = _wert("outstanding_shares", frames, cols, ttm)
+        eq = _wert("shareholders_equity", frames, cols, ttm, jahr, jahr_cols)
+        sh = _wert("outstanding_shares", frames, cols, ttm, jahr, jahr_cols)
         return None if not eq or not sh else eq / sh
     if feld == "gross_margin":
-        gp = _wert("gross_profit", frames, cols, ttm)
-        rev = _wert("revenue", frames, cols, ttm)
+        gp = _wert("gross_profit", frames, cols, ttm, jahr, jahr_cols)
+        rev = _wert("revenue", frames, cols, ttm, jahr, jahr_cols)
         return None if gp is None or not rev else gp / rev
     if feld == "operating_margin":
-        oi = _wert("operating_income", frames, cols, ttm)
-        rev = _wert("revenue", frames, cols, ttm)
+        oi = _wert("operating_income", frames, cols, ttm, jahr, jahr_cols)
+        rev = _wert("revenue", frames, cols, ttm, jahr, jahr_cols)
         return None if oi is None or not rev else oi / rev
     if feld == "net_margin":
-        ni = _wert("net_income", frames, cols, ttm)
-        rev = _wert("revenue", frames, cols, ttm)
+        ni = _wert("net_income", frames, cols, ttm, jahr, jahr_cols)
+        rev = _wert("revenue", frames, cols, ttm, jahr, jahr_cols)
         return None if ni is None or not rev else ni / rev
     if feld == "debt_to_equity":
-        td = _wert("total_debt", frames, cols, ttm)
-        eq = _wert("shareholders_equity", frames, cols, ttm)
+        td = _wert("total_debt", frames, cols, ttm, jahr, jahr_cols)
+        eq = _wert("shareholders_equity", frames, cols, ttm, jahr, jahr_cols)
         return None if td is None or not eq else td / eq
     if feld == "return_on_invested_capital":
-        ebit = _wert("ebit", frames, cols, ttm)
-        td = _wert("total_debt", frames, cols, ttm) or 0.0
-        eq = _wert("shareholders_equity", frames, cols, ttm)
+        ebit = _wert("ebit", frames, cols, ttm, jahr, jahr_cols)
+        td = _wert("total_debt", frames, cols, ttm, jahr, jahr_cols) or 0.0
+        eq = _wert("shareholders_equity", frames, cols, ttm, jahr, jahr_cols)
         if ebit is None or not eq:
             return None
         kapital = td + eq
@@ -328,6 +343,8 @@ def search_line_items(
         ttm = False
 
     cols = {k: _columns_until(df, end_date) for k, df in frames.items()}
+    jahr = _abschluesse(ticker, quartalsweise=False)
+    jahr_cols = {k: _columns_until(df, end_date) for k, df in jahr.items()}
     perioden = cols["income"] or cols["balance"] or cols["cash"]
     if not perioden:
         return []
@@ -339,11 +356,11 @@ def search_line_items(
         # Für jede Periode die Spalten so verschieben, dass "die letzten vier
         # Quartale" ab dieser Periode gelten und nicht ab heute.
         verschoben = {k: v[versatz:] for k, v in cols.items()}
-        felder = {}
-        for feld in line_items:
-            wert = _wert(feld, frames, verschoben, ttm)
-            if wert is not None:
-                felder[feld] = wert
+        # Jedes angefragte Feld setzen, auch ohne Wert. Die Agenten greifen
+        # direkt zu (item.net_income), ein fehlendes Attribut wirft dort einen
+        # AttributeError. None ist die richtige Antwort auf "gibt es nicht".
+        felder = {feld: _wert(feld, frames, verschoben, ttm, jahr, jahr_cols)
+                  for feld in line_items}
         ergebnis.append(
             LineItem(
                 ticker=ticker,
@@ -375,6 +392,8 @@ def get_financial_metrics(
         ttm = False
 
     cols = {k: _columns_until(df, end_date) for k, df in frames.items()}
+    jahr = _abschluesse(ticker, quartalsweise=False)
+    jahr_cols = {k: _columns_until(df, end_date) for k, df in jahr.items()}
     perioden = cols["income"] or cols["balance"] or cols["cash"]
     if not perioden:
         return []
@@ -384,7 +403,8 @@ def get_financial_metrics(
     marktkap = get_market_cap(ticker, end_date)
 
     def hole(feld, versatz):
-        return _wert(feld, frames, {k: v[versatz:] for k, v in cols.items()}, ttm)
+        return _wert(feld, frames, {k: v[versatz:] for k, v in cols.items()},
+                     ttm, jahr, jahr_cols)
 
     def teile(a, b):
         return None if a is None or not b else a / b
@@ -392,6 +412,12 @@ def get_financial_metrics(
     def wachstum(feld, versatz):
         jetzt, vorher = hole(feld, versatz), hole(feld, versatz + 1)
         if jetzt is None or not vorher:
+            return None
+        if jetzt == vorher:
+            # Bitgleich heißt hier fast immer: beide Perioden sind auf denselben
+            # Jahreswert zurückgefallen, weil die Quartalsreihe eine Lücke hat.
+            # Dann ist das Wachstum unbekannt, nicht null. Null wäre eine
+            # Aussage, die wir nicht belegen können.
             return None
         return (jetzt - vorher) / abs(vorher)
 

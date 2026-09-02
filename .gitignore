@@ -77,3 +77,6 @@ v2/funds/*.yaml
 # writes <fund>-run-<stamp>.json. Both are personal trading history, not code.
 v2/funds/*-backtest*.json
 v2/funds/*-run-*.json
+
+# lokale Testumgebung
+.venv/
