@@ -1,3 +1,76 @@
+# KI-Analysten-Team
+
+Neunzehn KI-Analysten schauen sich eine Aktie an. Dreizehn davon arbeiten im Stil bekannter Investoren wie Buffett, Lynch oder Burry, dazu kommen Fach-Analysten für Bewertung, Fundamentaldaten, Stimmung und Charttechnik. Ein Risiko- und ein Portfolio-Manager fassen alles zusammen. Am Ende hast du ein Urteil je Analyst und ein Gesamtbild.
+
+Das ist eine deutsche Fassung von [virattt/ai-hedge-fund](https://github.com/virattt/ai-hedge-fund) (MIT-Lizenz). Die Kurse und Abschlüsse kommen hier über yfinance, ohne eigenen Datenschlüssel, und deutsche Aktien wie `SAP.DE` funktionieren. **Nur zum Lernen. Keine Anlageberatung. Das Programm handelt nicht und gibt keine Orders auf.**
+
+## So startest du
+
+**1 · Projekt holen.** Am besten in einen eigenen Ordner, nicht in ein anderes Projekt.
+
+```bash
+git clone https://github.com/MellowMind7/ki-analysten-team.git
+cd ki-analysten-team
+```
+
+**2 · Schlüssel für das Sprachmodell.** Du brauchst genau einen, den von [OpenRouter](https://openrouter.ai/settings/keys). Darüber erreichst du viele Modelle mit einem Konto. Leg dort einen eigenen Schlüssel für dieses Projekt an und setz ein Ausgabenlimit, zum Beispiel 5 Dollar. Dann legst du im Projektordner eine Datei `.env` mit dieser einen Zeile an und trägst den Schlüssel hinter dem Gleichheitszeichen ein:
+
+```
+OPENROUTER_API_KEY=
+```
+
+Die `.env` liest das Programm selbst aus dem Ordner, aus dem du es startest. Sie gehört nicht zu GitHub, das verhindert die `.gitignore`.
+
+**3 · Einrichten.** Mit [uv](https://docs.astral.sh/uv/), Poetry brauchst du nicht.
+
+```bash
+uv venv --python 3.12
+uv pip install -e .
+```
+
+**4 · Laufen lassen, ohne Auswahlmenü.** Aus dem Projektordner:
+
+```bash
+.venv/bin/python src/main.py --tickers SAP.DE --analysts-all --model deepseek/deepseek-chat --show-reasoning
+```
+
+Unter Windows heißt der Anfang `.venv\Scripts\python src\main.py`, der Rest bleibt gleich.
+
+Ohne `--analysts-all` und `--model` fragt das Programm beides über ein Menü ab, und das geht nicht, wenn Claude oder ein Skript es startet. Lass die beiden Angaben also immer drin.
+
+## Welches Modell
+
+Bei `--model` gelten nur diese Namen, genau so geschrieben (Liste in `src/llm/api_models.json`):
+
+| Name | Wofür |
+|---|---|
+| `deepseek/deepseek-chat` | günstig und zuverlässig, der Normalfall. Ein Lauf auf eine Aktie mit allen Analysten kostete im Test im September 2026 unter einen Cent |
+| `openai/gpt-5-mini` | günstig, gute Alternative |
+| `anthropic/claude-sonnet-5` | formuliert besser, kostet deutlich mehr |
+| `meta-llama/llama-4-maverick` | offenes Modell |
+
+Was ein Lauf gekostet hat, siehst du bei OpenRouter unter Activity.
+
+## Aus dem Ergebnis ein PDF
+
+Das Programm schreibt sein Ergebnis ins Terminal, mit `--show-reasoning` samt Begründung je Analyst. Ein PDF baut es nicht selbst. Das macht Claude für dich, etwa mit dem Satz „Mach mir aus dem Ergebnis ein PDF mit dem Urteil je Analyst und dem Gesamtbild. Wo sind sie sich uneinig?“
+
+## Wenn es hakt
+
+| Das siehst du | Daran liegt es |
+|---|---|
+| `API Key Error … OPENROUTER_API_KEY` | Die `.env` fehlt im Projektordner, die Zeile ist anders geschrieben oder der Schlüssel ist leer. Programm aus dem Projektordner starten |
+| `Model '…' not found` und dann ein Menü | Der Modellname weicht ab. Einen Namen aus der Tabelle oben nehmen |
+| `Nachrichten für … nicht verfügbar` | Yahoo liefert gerade keine Nachrichten. Der Rest läuft weiter, der Stimmungs-Analyst hat dann weniger Stoff |
+| Insider-Analyst ohne Signal bei deutschen Aktien | Insider-Meldungen gibt es nur für US-Werte (SEC, Form 4). Das ist richtig so |
+| Deutsche Aktie wird nicht gefunden | Kürzel mit Börsenendung angeben, etwa `SAP.DE`, `BMW.DE` |
+
+---
+
+## Originalanleitung (englisch)
+
+Ab hier folgt die Anleitung des Originalprojekts. Für diese Fassung gilt der Weg oben: eigenes Repository, nur `OPENROUTER_API_KEY`, Start mit uv statt Poetry.
+
 # AI Hedge Fund
 
 This is a proof of concept for an AI-powered hedge fund.  The goal of this project is to explore the use of AI to make trading decisions.  This project is for **educational** purposes only and is not intended for real trading or investment.
