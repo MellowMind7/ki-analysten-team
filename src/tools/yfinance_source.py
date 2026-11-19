@@ -22,6 +22,8 @@ from __future__ import annotations
 import datetime as _dt
 import logging
 import os
+import threading
+import time
 
 import pandas as pd
 import yfinance as yf
@@ -124,13 +126,35 @@ def _sum_last_quarters(df: pd.DataFrame, cols: list, *names: str, count: int = 4
 # Kurse
 # ---------------------------------------------------------------------------
 
+_KURSE: dict = {}
+_KURSE_SPERRE = threading.Lock()
+
+
+def _kurshistorie(ticker: str, start_date: str, end_date: str):
+    """Kurse einmal holen und für alle Agenten merken. Laufen 19 Agenten gleichzeitig,
+    bremst Yahoo sonst einzelne Abfragen aus und meldet sie als „possibly delisted“."""
+    schluessel = (ticker, start_date, end_date)
+    with _KURSE_SPERRE:
+        if schluessel in _KURSE:
+            return _KURSE[schluessel]
+        hist = None
+        for versuch in range(3):
+            try:
+                hist = _ticker(ticker).history(start=start_date, end=end_date, auto_adjust=False)
+            except Exception as exc:
+                logger.warning("yfinance Kurse für %s, Versuch %d: %s", ticker, versuch + 1, exc)
+                hist = None
+            if hist is not None and not hist.empty:
+                break
+            time.sleep(2 * (versuch + 1))
+        if hist is not None and not hist.empty:
+            _KURSE[schluessel] = hist
+        return hist
+
+
 def get_prices(ticker: str, start_date: str, end_date: str, api_key: str = None) -> list[Price]:
     """Tageskurse. ``api_key`` wird ignoriert, yfinance braucht keinen."""
-    try:
-        hist = _ticker(ticker).history(start=start_date, end=end_date, auto_adjust=False)
-    except Exception as exc:
-        logger.warning("yfinance Kurse für %s nicht verfügbar: %s", ticker, exc)
-        return []
+    hist = _kurshistorie(ticker, start_date, end_date)
     if hist is None or hist.empty:
         return []
 
