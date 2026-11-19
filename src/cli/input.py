@@ -259,6 +259,8 @@ def parse_cli_inputs(
 
     if include_reasoning_flag:
         parser.add_argument("--show-reasoning", action="store_true", help="Show reasoning from each agent")
+        parser.add_argument("--save-json", dest="save_json", type=str, default=None,
+                            help="Save the complete run (decisions and every agent's signal and reasoning) to this JSON file")
     if include_graph_flag:
         parser.add_argument("--show-agent-graph", action="store_true", help="Show the agent graph")
 

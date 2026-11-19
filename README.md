@@ -38,6 +38,8 @@ Unter Windows heißt der Anfang `.venv\Scripts\python src\main.py`, der Rest ble
 
 Ohne `--analysts-all` und `--model` fragt das Programm beides über ein Menü ab, und das geht nicht, wenn Claude oder ein Skript es startet. Lass die beiden Angaben also immer drin.
 
+Mit `--save-json reports/SAP.DE-lauf.json` speichert das Programm den ganzen Lauf zusätzlich als Datei: jedes Signal, jede Konfidenz, jede Begründung und die Entscheidung. Daraus lässt sich später ein Report bauen, auch in einem neuen Chat.
+
 ## Welches Modell
 
 Bei `--model` gelten nur diese Namen, genau so geschrieben (Liste in `src/llm/api_models.json`):
@@ -53,7 +55,7 @@ Was ein Lauf gekostet hat, siehst du bei OpenRouter unter Activity.
 
 ## Aus dem Ergebnis ein PDF
 
-Das Programm schreibt sein Ergebnis ins Terminal, mit `--show-reasoning` samt Begründung je Analyst. Ein PDF baut es nicht selbst. Das macht Claude für dich, etwa mit dem Satz „Mach mir aus dem Ergebnis ein PDF mit dem Urteil je Analyst und dem Gesamtbild. Wo sind sie sich uneinig?“
+Das Programm schreibt sein Ergebnis ins Terminal und mit `--save-json` in eine Datei. Ein PDF baut es nicht selbst. Das macht Claude für dich aus der gespeicherten Datei, etwa mit dem Satz „Mach mir aus dem Ergebnis ein PDF mit dem Urteil je Analyst und dem Gesamtbild. Wo sind sie sich uneinig?“
 
 ## Wenn es hakt
 

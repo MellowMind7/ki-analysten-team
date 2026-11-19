@@ -92,6 +92,29 @@ def run_hedge_fund(
         progress.stop()
 
 
+def save_run_json(path: str, result: dict, inputs) -> None:
+    """Write the complete run to a JSON file, so reports can be built from it later."""
+    from pathlib import Path
+
+    def plain(value):
+        return value.item() if hasattr(value, "item") else str(value)
+
+    run = {
+        "created": datetime.now().isoformat(timespec="seconds"),
+        "tickers": inputs.tickers,
+        "start_date": inputs.start_date,
+        "end_date": inputs.end_date,
+        "model_name": inputs.model_name,
+        "model_provider": inputs.model_provider,
+        "decisions": result.get("decisions"),
+        "analyst_signals": result.get("analyst_signals"),
+    }
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(run, indent=2, ensure_ascii=False, default=plain), encoding="utf-8")
+    print(f"\nRun saved to {target}")
+
+
 def start(state: AgentState):
     """Initialize the workflow with the input message."""
     return state
@@ -177,3 +200,6 @@ if __name__ == "__main__":
         model_provider=inputs.model_provider,
     )
     print_trading_output(result)
+
+    if getattr(inputs.raw_args, "save_json", None):
+        save_run_json(inputs.raw_args.save_json, result, inputs)
