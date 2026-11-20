@@ -1,6 +1,6 @@
 # KI-Analysten-Team
 
-Neunzehn KI-Analysten schauen sich eine Aktie an. Dreizehn davon arbeiten im Stil bekannter Investoren wie Buffett, Lynch oder Burry, dazu kommen Fach-Analysten für Bewertung, Fundamentaldaten, Stimmung und Charttechnik. Ein Risiko- und ein Portfolio-Manager fassen alles zusammen. Am Ende hast du ein Urteil je Analyst und ein Gesamtbild.
+Neunzehn KI-Analysten schauen sich eine Aktie an. Dreizehn davon arbeiten im Stil bekannter Investoren wie Buffett, Lynch oder Burry, dazu kommen sechs Fach-Analysten für Bewertung, Fundamentaldaten, Wachstum, Charttechnik, Stimmung und Nachrichten. Ein Risiko- und ein Portfolio-Manager fassen alles zusammen. Am Ende hast du ein Urteil je Analyst und ein Gesamtbild.
 
 Das ist eine deutsche Fassung von [virattt/ai-hedge-fund](https://github.com/virattt/ai-hedge-fund) (MIT-Lizenz). Die Kurse und Abschlüsse kommen hier über yfinance, ohne eigenen Datenschlüssel, und deutsche Aktien wie `SAP.DE` funktionieren. **Nur zum Lernen. Keine Anlageberatung. Das Programm handelt nicht und gibt keine Orders auf.**
 
